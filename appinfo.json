@@ -1,0 +1,56 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        ""
+    ],
+    "companyName": "bobdotexe",
+    "longName": "megaman basic pet",
+    "projectType": "native",
+    "resources": {
+        "media": [
+            {
+                "file": "images/hakari.png",
+                "menuIcon": true,
+                "name": "icon",
+                "type": "png"
+            },
+            {
+                "file": "images/frame_2.png",
+                "name": "mm_frame_2",
+                "type": "png"
+            },
+            {
+                "characterRegex": "[0-9:A-Za-z, ]",
+                "file": "fonts/NovaSquare.ttf",
+                "name": "FONT_date_22",
+                "type": "font"
+            },
+            {
+                "characterRegex": "[0-9:]",
+                "file": "fonts/control-freak.upset.ttf",
+                "name": "FONT_time_48",
+                "type": "font"
+            },
+            {
+                "file": "images/frame_3.png",
+                "name": "mm_frame_3",
+                "type": "png"
+            },
+            {
+                "file": "images/frame_1.png",
+                "name": "mm_frame_1",
+                "type": "png"
+            }
+        ]
+    },
+    "sdkVersion": "3",
+    "shortName": "megaman basic",
+    "targetPlatforms": [
+        "aplite"
+    ],
+    "uuid": "4ca9cee5-c2d3-4a2a-9bc3-bd44574dcd94",
+    "versionLabel": "1.01",
+    "watchapp": {
+        "watchface": true
+    }
+}
