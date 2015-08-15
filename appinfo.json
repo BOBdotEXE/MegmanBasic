@@ -1,7 +1,9 @@
 {
-    "appKeys": {},
+    "appKeys": {
+        "KEY_SPEED": 0
+    },
     "capabilities": [
-        ""
+        "configurable"
     ],
     "companyName": "bobdotexe",
     "longName": "megaman basic pet",
@@ -49,7 +51,7 @@
         "aplite"
     ],
     "uuid": "4ca9cee5-c2d3-4a2a-9bc3-bd44574dcd94",
-    "versionLabel": "1.01",
+    "versionLabel": "1.2",
     "watchapp": {
         "watchface": true
     }
