@@ -17,6 +17,8 @@ bool vib_hour =false;
 int last_hour =24; //that's not possible!
 bool batflash =true;
 bool wasDisconnected =false; //previouly disconnected? 
+
+
 static void update_time() {
   // Get a tm structure
   time_t temp = time(NULL); 
@@ -253,7 +255,43 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 
 }
   
-static void init() {
+
+static void in_recv_handler(DictionaryIterator *iterator, void *context)
+{
+  //Get Tuple
+  Tuple *t = dict_read_first(iterator);
+  if(t)
+  {
+    switch(t->key)
+    {
+    case KEY_SPEED:
+      //It's the KEY_INVERT key
+      if(strcmp(t->value->cstring, "on") == 0)
+      {
+        //Set and save as inverted
+        text_layer_set_text_color(text_layer, GColorWhite);
+        text_layer_set_background_color(text_layer, GColorBlack);
+        text_layer_set_text(text_layer, "Inverted!");
+ 
+        persist_write_bool( KEY_SPEED, true);
+      }
+      else if(strcmp(t->value->cstring, "off") == 0)
+      {
+        //Set and save as not inverted
+        text_layer_set_text_color(text_layer, GColorBlack);
+        text_layer_set_background_color(text_layer, GColorWhite);
+        text_layer_set_text(text_layer, "Not inverted!");
+ 
+        persist_write_bool( KEY_SPEED, false);
+      }
+      break;
+    }
+  }
+}
+
+  
+  static void init() {
+
   // Create main Window element and assign to pointer
   s_main_window = window_create();
 
@@ -269,6 +307,10 @@ static void init() {
   // Register with TickTimerService
   tick_timer_service_subscribe(SECOND_UNIT, (TickHandler) tick_handler);
   app_timer_register(0, look, NULL);
+    if (speed == 'Choice 1')
+      f_delay =3000;
+    if (speed == 'Choice 2')
+      f_delay =300;
   
 }
 
