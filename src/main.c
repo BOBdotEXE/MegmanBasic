@@ -1,5 +1,8 @@
 #include <pebble.h>
-  
+#define KEY_vib 0
+#define KEY_fast 1
+#define KEY_med 2
+#define KEY_slow 3
 static Window *s_main_window;
 static TextLayer *s_time_layer;
 //static TextLayer *s_battery_layer; //text layer for battery percentage
@@ -16,7 +19,11 @@ int g_interval =18; //glitces every 'g_interval' seconds
 bool vib_hour =false;
 int last_hour =24; //that's not possible!
 bool batflash =true;
-bool wasDisconnected =false; //previouly disconnected? 
+bool wasDisconnected =false; //previouly disconnected?
+bool fast;
+bool med;
+bool slow;
+bool vib;
 
 
 static void update_time() {
@@ -67,6 +74,47 @@ static void update_time() {
   }
 
 
+
+static void inbox_received_handler(DictionaryIterator *iter, void *context) {
+  Tuple *fast_t = dict_find(iter, KEY_fast);
+  Tuple *med_t = dict_find(iter, KEY_med);
+  Tuple *slow_t = dict_find(iter, KEY_slow);
+  Tuple *vib_t = dict_find(iter, KEY_vib);
+  
+  if (fast_t) {
+   fast = fast_t->value->int32;
+    persist_write_int(KEY_fast, fast);
+      f_delay=950;
+  }
+  
+    if (med_t) {
+   med = med_t->value->int32;
+    persist_write_int(KEY_med, med);
+      f_delay=3000;
+  }
+  
+  if (slow_t) {
+    slow = slow_t->value->int32;
+    persist_write_int(KEY_slow, slow);
+    f_delay=60000;
+  }
+  
+
+  
+  if (vib_t) {
+    vib = vib_t->value->int32;
+    if (vib == true){
+      vib_hour=true;
+      vibes_short_pulse();
+    }
+    
+
+  }
+}
+
+
+
+
 static void main_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect window_bounds = layer_get_bounds(window_layer);
@@ -92,8 +140,33 @@ static void main_window_load(Window *window) {
     text_layer_set_text_color(s_time_layer,GColorWhite); /// black text
   text_layer_set_text(s_time_layer, "00:00");
   
-
+      //load delay based on user input
+   if (persist_read_int(KEY_fast)) {
+    bool go_fast= persist_read_int(KEY_fast);
+     if (go_fast== true)
+      f_delay=950;
+   }
   
+     if (persist_read_int(KEY_med)) {
+    bool go_med= persist_read_int(KEY_med);
+     if (go_med== true)
+      f_delay=3000; 
+   }
+  
+  if (persist_read_int(KEY_slow)) {
+    bool go_slow= persist_read_int(KEY_slow);
+    if (go_slow== true)
+      f_delay=60000; 
+  }
+  
+  if (persist_read_int(KEY_vib)) {
+    bool vib= persist_read_int(KEY_vib);
+    if (vib == true){
+      vib_hour=true;
+    vibes_short_pulse();}
+  
+  }
+
   /**
   //battery setup
   s_battery_layer = text_layer_create(GRect(20, 150, window_bounds.size.w, window_bounds.size.h));
@@ -149,6 +222,8 @@ static void main_window_load(Window *window) {
   update_time();
 }
 
+
+
 static void main_window_unload(Window *window) {
   //Unload GFont
   fonts_unload_custom_font(s_time_font);
@@ -176,16 +251,13 @@ static void main_window_unload(Window *window) {
 
 
 void look(void * data){  
-    
-     
-    int delay = f_delay;
-
+  
     if (nextFrame == 1)
       {
         bitmap_layer_set_bitmap(s_bg_layer,s_frame_1);
         layer_mark_dirty(bitmap_layer_get_layer(s_bg_layer));
         nextFrame =2;
-        app_timer_register(delay, look, NULL);
+        app_timer_register(f_delay, look, NULL);
       }
     else if (nextFrame == 2 || nextFrame ==4)
       {
@@ -195,14 +267,14 @@ void look(void * data){
           nextFrame =3;
         if (nextFrame == 4)
           nextFrame =1;
-        app_timer_register(delay, look, NULL);     
+        app_timer_register(f_delay, look, NULL);     
      }
     else if (nextFrame == 3)
       {
         bitmap_layer_set_bitmap(s_bg_layer,s_frame_3);
         layer_mark_dirty(bitmap_layer_get_layer(s_bg_layer));
         nextFrame =4;
-        app_timer_register(delay, look, NULL);     
+        app_timer_register(f_delay, look, NULL);     
      }
 }  
 
@@ -210,27 +282,14 @@ void look(void * data){
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     fade_sec ++;//time has passed since last blink
     int seconds = tick_time->tm_sec;
+    int min = tick_time->tm_min;
     int hours = tick_time ->tm_hour;
 
-  /** TODO
-    //Bluetooth Diconnect handler
-    if (bluetooth_connection_service_peek() ==false && wasDisconnected==false){ //if we WERE connected, and now are not, then do the following
-    layer_set_hidden( (Layer *) s_disconnect_layer,false);  //show it on the screen
-    wasDisconnected = true; //at last check, we WERE disconnected, 
-    vibes_double_pulse(); //double vibrate, so they will know it's not a normal notication.
-    }
-  
-   if (bluetooth_connection_service_peek() ==true && wasDisconnected ==true){ //if we WERE DISconnected (last we checked), and now are connected again, then do the following
-    layer_set_hidden( (Layer *) s_disconnect_layer,true);//hide the layer
-    wasDisconnected = false;// at last check  (now) we WERE connected
-    // layer_mark_dirty(bitmap_layer_get_layer( s_disconnected_layer)); 
-   }
-  **/
     if (last_hour == 24) //if at the last update the hour was 24, then we just started the watch
       last_hour=hours; //our new 'last hour' will be the current time
     
 
-    if (hours != last_hour && vib_hour ==true) //if hour has changed
+    if (min ==0 && seconds ==1 && vib_hour ==true) //if hour has changed
      {
         vibes_short_pulse(); //vibrate (short) 
         last_hour=hours;//our new 'last hour' will be the current time   
@@ -242,11 +301,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
         last_hour=hours;//our new 'last hour' will be the current time   
       }
   
-   // if (min == 59 && seconds == 59)
-     // app_timer_register(500, glitch_hour_ani, NULL); //start the hour glitch
 
-   // if (seconds ==59)
-   //  app_timer_register(500, glitch_min_ani, NULL); //start the min glitch
   
     if (seconds == 0)
       {
@@ -256,38 +311,6 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 }
   
 
-static void in_recv_handler(DictionaryIterator *iterator, void *context)
-{
-  //Get Tuple
-  Tuple *t = dict_read_first(iterator);
-  if(t)
-  {
-    switch(t->key)
-    {
-    case KEY_SPEED:
-      //It's the KEY_INVERT key
-      if(strcmp(t->value->cstring, "on") == 0)
-      {
-        //Set and save as inverted
-        text_layer_set_text_color(text_layer, GColorWhite);
-        text_layer_set_background_color(text_layer, GColorBlack);
-        text_layer_set_text(text_layer, "Inverted!");
- 
-        persist_write_bool( KEY_SPEED, true);
-      }
-      else if(strcmp(t->value->cstring, "off") == 0)
-      {
-        //Set and save as not inverted
-        text_layer_set_text_color(text_layer, GColorBlack);
-        text_layer_set_background_color(text_layer, GColorWhite);
-        text_layer_set_text(text_layer, "Not inverted!");
- 
-        persist_write_bool( KEY_SPEED, false);
-      }
-      break;
-    }
-  }
-}
 
   
   static void init() {
@@ -307,10 +330,8 @@ static void in_recv_handler(DictionaryIterator *iterator, void *context)
   // Register with TickTimerService
   tick_timer_service_subscribe(SECOND_UNIT, (TickHandler) tick_handler);
   app_timer_register(0, look, NULL);
-    if (speed == 'Choice 1')
-      f_delay =3000;
-    if (speed == 'Choice 2')
-      f_delay =300;
+ app_message_register_inbox_received(inbox_received_handler);
+  app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
   
 }
 

@@ -1,24 +1,35 @@
-
-  Pebble.addEventListener('showConfiguration', function(e) {
-  // Show config page
-  Pebble.openURL('https://bobdotexe.github.io/watchfaces/megaman_basic_conf.html');
+// from slate template
+//https://github.com/pebble-hacks/slate-watchface-template
+Pebble.addEventListener('ready', function() {
+  console.log('PebbleKit JS ready!');
 });
 
-Pebble.addEventListener("webviewclosed",
-  function(e) {
-    //Get JSON dictionary
-    var configuration = JSON.parse(decodeURIComponent(e.response));
-    console.log("Configuration window returned: " + JSON.stringify(configuration));
- 
-    //Send to Pebble, persist there
-    Pebble.sendAppMessage(
-      {"speed": configuration.speed},
-      function(e) {
-        console.log("Sending settings data...");
-      },
-      function(e) {
-        console.log("Settings feedback failed!");
-      }
-    );
+Pebble.addEventListener('showConfiguration', function() {
+  var url = 'https://bobdotexe.github.io/watchfaces/megaman_basic_conf.html';
+
+  console.log('Showing configuration page: ' + url);
+
+  Pebble.openURL(url);
+});
+
+Pebble.addEventListener('webviewclosed', function(e) {
+  var configData = JSON.parse(decodeURIComponent(e.response));
+
+  console.log('Configuration page returned: ' + JSON.stringify(configData));
+
+  if (configData.vib) {
+    Pebble.sendAppMessage({
+      
+      fast: configData.fast,
+      med: configData.med,
+      slow: configData.slow,
+      vib: configData.vib
+    }, function() {
+      console.log('Send successful!');
+    }, function() {
+      console.log('Send failed!');
+    });
   }
-);
+});
+
+ 
